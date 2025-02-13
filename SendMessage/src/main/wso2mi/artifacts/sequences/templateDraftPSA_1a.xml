@@ -21,8 +21,6 @@
         ]]>
     </script>
 
-
-    <!-- Log extracted values -->
     <log level="full">
         <property name="Extracted Data--------" expression="get-property('placeholders')" />
     </log>
@@ -64,8 +62,7 @@
             <arg expression="get-property('messageId')" />
             <arg expression="get-property('templateName')" />
             <arg expression="get-property('placeholders')" />
-            <arg evaluator="xml" expression="get-property('notifyUrl')" />
+            <arg expression="get-property('notifyUrl')" />
         </args>
     </payloadFactory>
-    <property name="infobipPayload" expression="json-eval($.)" scope="default" />
 </sequence>

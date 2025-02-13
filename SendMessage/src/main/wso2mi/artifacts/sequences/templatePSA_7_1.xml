@@ -1,16 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sequence name="templatePSA_7_1" xmlns="http://ws.apache.org/ns/synapse">
+
+    <script language="js"><![CDATA[
+        var msg = mc.getProperty('msg');
+
+        // Extract text between "Hai" and "."
+        var match = msg.match(/Hai\s(.*?)\./);
+        var extractedNameArray = match ? [match[1].trim()] : [];
+
+        // Store extracted name as an array
+        mc.setProperty('placeholders', JSON.stringify(extractedNameArray));
+    ]]>
+    </script>
+
+    <log level="full">
+        <property name="Extracted Data--------" expression="get-property('placeholders')" />
+    </log>
+
     <payloadFactory media-type="json" template-type="default">
         <format> {
                     "messages": [
                         {
                             "from": "$1",
                             "to": "$2",
+                            "messageId": "$3",
                             "content": {
-                                "templateName": "$3",
+                                "templateName": "$4",
                                 "templateData": {
                                     "body": {
-                                        "placeholders": $4
+                                        "placeholders": $5
                                     }
                                 },
                                 "language": "en"
@@ -23,10 +41,11 @@
         </format>
         <args>
             <arg expression="get-property('from')" />
-            <arg expression="get-property('send_to')" />
+            <arg expression="get-property('to')" />
+            <arg expression="get-property('messageId')" />
             <arg expression="get-property('templateName')" />
             <arg expression="get-property('placeholders')" />
-            <arg evaluator="xml" expression="get-property('notifyUrl')" />
+            <arg expression="get-property('notifyUrl')" />
         </args>
     </payloadFactory>
     <property name="infobipPayload" expression="json-eval($.)" scope="default" />
