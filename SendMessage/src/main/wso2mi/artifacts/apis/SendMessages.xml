@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<api context="/" name="SendMessages"
+    xmlns="http://ws.apache.org/ns/synapse">
+    <resource methods="POST" uri-template="/blast/message" faultSequence="onErrorSequence">
+        <inSequence>
+            <log level="full">
+                <property name="INFO" value="Starting integration processing..." />
+            </log>
+            
+            <enrich>
+                <source type="body" />
+                <target type="property" property="requestPayload" />
+            </enrich>
+            <property name="from" value="601112669338" scope="default" />
+            <property name="to" expression="$ctx:requestPayload/send_to" scope="default" />
+            <property name="templateName" expression="$ctx:requestPayload/templateName" scope="default" />
+            <property name="msg" expression="$ctx:requestPayload/msg" scope="default" />
+            <property name="messageId" expression="$ctx:requestPayload/msg_id" scope="default" />
+            <property name="messageId" expression="$ctx:requestPayload/msg_id" scope="transport" type="STRING" />
+            <property name="notifyUrl" value="https://wso2api.devwso2.kraftsoftwaresolutions.com/blastwhatsappmessages/1.0.0/callback" />
+                        <!-- JavaScript Mediator to extract values -->
+            
+            <log level="full">
+                <property name="requestPayload----" expression="get-property('requestPayload')"/>
+                <property name="send_to" expression="get-property('to')"/>
+                <property name="messageId-------" expression="get-property('messageId')"/>
+                <property name="templateName" expression="get-property('templateName')"/>
+                <property name="msg" expression="get-property('msg')"/>
+            </log>
+            <property name="integrationNo" scope="transport" type="STRING" value="I1125" />
+            <property name="type" scope="transport" type="STRING" value="Incoming Request" />
+
+            <payloadFactory media-type="json" template-type="default">
+                <format> $1</format>
+                <args>
+                    <arg expression="get-property('requestPayload')" />
+                </args>
+            </payloadFactory>
+            <log level="full">
+                <property name="before logs" value="-------"/>
+            </log>
+            <call >
+                <endpoint key="LogAPI" />
+            </call>
+            <log level="full">
+                <property name="INFO" value="Starting integration processing..." />
+                <property name="codebwm-=" expression="get-property('axis2', 'HTTP_SC')"/>
+            </log>
+            <property description="retry count " name="RETRY_COUNT" scope="default" type="STRING" value="0" />
+            <sequence key="processSeq" />
+            <respond />
+        </inSequence>
+    </resource>
+</api>

@@ -1,0 +1,73 @@
+<data name="LogService" serviceNamespace="" serviceGroup="" transports="http https"
+    disableStreaming="true">
+    <description />
+    <config id="log">
+        <property name="driverClassName">com.mysql.cj.jdbc.Driver</property>
+        <property name="url">jdbc:mysql://20.2.32.171:3306/vkraftwso2</property>
+        <property name="username">wso2</property>
+        <property name="password">wso2@2024</property>
+    </config>
+    <query id="select_all_logs_query" useConfig="log">
+        <sql>SELECT integrationNo, currentdatetime,
+            payload, error_details, messageid, type,
+            errorcode FROM logs</sql>
+        <result element="logsCollection" rowName="logs">
+            <element column="integrationNo" name="integrationNo" xsdType="xs:string" />
+            <element column="currentdatetime" name="currentdatetime" xsdType="xs:timestamp" />
+            <element column="payload" name="payload" xsdType="xs:string" />
+            <element column="error_details" name="error_details" xsdType="xs:string" />
+            <element column="messageid" name="messageid" xsdType="xs:string" />
+            <element column="type" name="type" xsdType="xs:string" />
+            <element column="errorcode" name="errorcode" xsdType="xs:string" />
+        </result>
+    </query>
+    <resource method="GET" path="logs">
+        <call-query href="select_all_logs_query" />
+    </resource>
+    <query id="insert_logs_query" useConfig="log">
+        <sql>INSERT INTO logs
+            (integrationNo,currentdatetime,payload,error_details,messageid,type,errorcode) VALUES
+            (?,CURRENT_TIMESTAMP(3),?,?,?,?,?)</sql>
+        <param name="integrationNo" ordinal="1" paramType="SCALAR" sqlType="STRING" type="IN" />
+        <param name="payload" ordinal="2" paramType="SCALAR" sqlType="STRING" type="IN" />
+        <param name="error_details" ordinal="3" paramType="SCALAR" sqlType="STRING" type="IN" />
+        <param name="messageid" ordinal="4" paramType="SCALAR" sqlType="STRING" type="IN" />
+        <param name="type" ordinal="5" paramType="SCALAR" sqlType="STRING" type="IN" />
+        <param name="errorcode" ordinal="6" paramType="SCALAR" sqlType="STRING" type="IN" />
+    </query>
+    <resource method="POST" path="logs">
+        <call-query href="insert_logs_query">
+            <with-param name="integrationNo" query-param="integrationNo" />
+            <with-param name="payload" query-param="payload" />
+            <with-param name="error_details" query-param="error_details" />
+            <with-param name="messageid" query-param="messageid" />
+            <with-param name="type" query-param="type" />
+            <with-param name="errorcode" query-param="errorcode" />
+        </call-query>
+    </resource>
+    <query id="select_all_CONFIGS_query" useConfig="log">
+        <sql>SELECT config_data FROM CONFIGS where config_key="smtp_config"</sql>
+      <result outputType="json">{"configs":{"config":[{"value":"$config_data"}]}}</result>
+    </query>
+    <resource method="GET" path="CONFIGS">
+        <call-query href="select_all_CONFIGS_query" />
+    </resource>
+
+
+    <query id="post_callbacklogs_query" useConfig="log">
+        <sql>INSERT INTO logs (integrationNo,currentdatetime,payload,messageid,type) VALUES
+            (?,CURRENT_TIMESTAMP(3),?,?,?)</sql>
+        <param name="integrationNo" ordinal="1" paramType="SCALAR" sqlType="STRING" type="IN" />
+        <param name="payload" ordinal="2" paramType="SCALAR" sqlType="STRING" type="IN" />
+        <param name="messageid" ordinal="3" paramType="SCALAR" sqlType="STRING" type="IN" />
+        <param name="type" ordinal="4" paramType="SCALAR" sqlType="STRING" type="IN" />
+    </query>
+    <resource method="POST" path="callbacklogs">
+        <call-query href="post_callbacklogs_query" >
+        <with-param name="integrationNo" query-param="integrationNo" />
+        <with-param name="payload" query-param="payload" />
+        <with-param name="messageid" query-param="messageid" />
+        <with-param name="type" query-param="type" />
+        </call-query>
+    </resource>
+</data>

@@ -1,0 +1,16 @@
+<data name="infobipConfig" serviceNamespace="" transports="http https">
+   <description>Exposing the data service as a REST service.</description>
+   <config id="infobipDS">
+      <property name="username">wso2</property>
+      <property name="password">wso2@2024</property>
+      <property name="url">jdbc:mysql://20.2.32.171:3306/vkraftwso2</property>
+      <property name="driverClassName">com.mysql.cj.jdbc.Driver</property>
+   </config>
+   <query id="readConfigs" useConfig="infobipDS">
+      <sql>SELECT config_data FROM CONFIGS WHERE config_key = 'infobip_config'</sql>
+      <result outputType="json">{"configs":{"config":[{"value":"$config_data"}]}}</result>
+   </query>
+   <resource method="GET" path="infobipDS">
+      <call-query href="readConfigs"/>
+   </resource>
+</data>

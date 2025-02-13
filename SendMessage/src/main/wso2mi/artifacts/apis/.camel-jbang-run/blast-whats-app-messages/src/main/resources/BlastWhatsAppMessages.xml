@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<api context="/" name="BlastWhatsAppMessages"
+    xmlns="http://ws.apache.org/ns/synapse">
+    <resource methods="POST" uri-template="/wamessage/send" faultSequence="onErrorSequence">
+        <inSequence>
+            <log level="full">
+                <property name="INFO" value="Starting integration processing..." />
+            </log>
+            <property name="from" expression="json-eval($.from)" scope="default" />
+            <property name="to" expression="json-eval($.to)" scope="default" />
+            <property name="templateName" expression="json-eval($.templateName)" scope="default" />
+            <property name="messageId" expression="json-eval($.messageId)" scope="default" />
+            <property name="language" expression="json-eval($.language)" scope="default" />
+            <property name="imageURL" expression="json-eval($.imageURL)" scope="default" />
+            <property name="buttons" expression="json-eval($.buttons)" scope="default" />
+            <property name="placeholders" expression="json-eval($.placeholders)" scope="default" />
+            <property name="notifyUrl" value="https://mytestdomain.loca.lt/callback" />
+
+            <property name="integrationNo" scope="transport" type="STRING" value="I1125" />
+            <property name="type" scope="transport" type="STRING" value="Incoming Request" />
+
+            <call blocking="false">
+                <endpoint key="LogAPI" />
+            </call>
+            <property description="retry count " name="RETRY_COUNT" scope="default" type="STRING" value="0" />
+            <sequence key="process" />
+        </inSequence>
+    </resource>
+    <resource methods="POST" uri-template="/callback">
+        <inSequence>
+            <log level="full">
+                <property name="INFO" value="callback called----------" />
+            </log>
+            <sequence key="processCallback" />
+        </inSequence>
+    </resource>
+    <resource methods="POST" uri-template="/tm-url">
+        <inSequence>
+            <log level="full">
+                <property name="INFO" value="tm-url called----------" />
+            </log>
+        </inSequence>
+    </resource>
+</api>

@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<api context="/logapi" name="LogApi" xmlns="http://ws.apache.org/ns/synapse">
+    <resource methods="POST">
+        <inSequence>
+            <enrich>
+                <source type="body" />
+                <target type="property" property="fullPayload" />
+            </enrich>
+            <filter xpath="get-property('transport', 'type') = 'Incoming Request'">
+                <then>
+                    <property name="messageId" expression="json-eval($.messageId)" scope="default"
+                        type="STRING" />
+                </then>
+                <else>
+                    <property name="messageId" expression="json-eval($.messages[0].messageId)"
+                        scope="default" type="STRING" />
+                </else>
+            </filter>
+
+            <property name="Body" expression="json-eval($.)" scope="default" />
+            <property name="Exception" expression="get-property('transport','exception')" />
+            <property name="Integration ID" expression="get-property('transport','integrationNo')" />
+            <property name="Error Code" expression="get-property('transport','errorCode')" />
+            <property name="Type" expression="get-property('transport','type')" />
+
+            <call>
+                <endpoint key="GetEmail" />
+            </call>
+            <property name="emailPayload" expression="//*[local-name()='config_data']/text()" scope="default" type="STRING" />
+            
+            <payloadFactory media-type="json">
+                <format>{ "emailPayload": $1 }</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('emailPayload')" />
+                </args>
+            </payloadFactory>
+
+            <property name="emailId" expression="json-eval($.emailPayload.email_id)" scope="default" />
+            <property name="exception" expression="get-property('Exception')" />
+            <property name="Integration ID" expression="get-property('Integration ID')" />
+            <property name="Error Code" expression="get-property('Error Code')" />
+
+            <filter xpath="boolean(get-property('exception'))">
+                <then>
+                    <property name="type" value="ERROR" scope="default" />
+
+                    <payloadFactory media-type="json" template-type="default">
+                        <format><![CDATA[
+                            {
+                                "from": "vaibhavilandge97@gmail.com",
+                                "to": "$1",
+                                "subject": "Integration Number-$2 Error Notification",
+                                "content": "<html>
+                                    <head>
+                                        <style>
+                                            body { font-family: Arial, sans-serif; color: #333; }
+                                            h2 { color: #2F4F4F; font-size: 20px; margin-top: 0; font-weight: normal; }
+                                            p { font-size: 16px; line-height: 1.5; }
+                                            table { width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid black; }
+                                            th, td { padding: 10px; text-align: left; border: 1px solid black; }
+                                            th { background-color: yellow; color: black; font-weight: normal; }
+                                            tr:nth-child(even) { background-color: #f2f2f2; }
+                                            .footer { font-size: 12px; color: #777; margin-top: 20px; }
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <h2>Dear Customer,</h2>
+                                        <p>We encountered an issue during your recent transaction. Please find the details below:</p>
+                                        <table>
+                                            <tr>
+                                                <th>Integration No</th>
+                                                <td>$2</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Error Details</th>
+                                                <td>$3</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Message ID</th>
+                                                <td>$4</td>
+                                            </tr>
+                                        </table>
+                                        <div class='footer'>
+                                            <p>If you have any questions, please contact support.</p>
+                                        </div>
+                                    </body>
+                                </html>",
+                                "contentType": "text/html"
+                            }
+                            ]]>
+                        </format>
+                        <args>
+                            <arg expression="get-property('emailId')" />
+                            <arg expression="get-property('Integration ID')" />
+                            <arg expression="get-property('exception')" />
+                            <arg expression="get-property('messageId')" />
+                        </args>
+                    </payloadFactory>
+                    <call>
+                        <endpoint key="EmailService" />
+                    </call>
+
+                    <payloadFactory media-type="xml">
+                        <format>
+                            <logRequest>
+                                <integrationNo>$1</integrationNo>
+                                <payload>$2</payload>
+                                <type>$3</type>
+                                <error_details>$4</error_details>
+                                <errorcode>$5</errorcode>
+                                <messageid>$6</messageid>
+                            </logRequest>
+                        </format>
+                        <args>
+                            <arg expression="get-property('Integration ID')" evaluator="xml" />
+                            <arg expression="get-property('fullPayload')" evaluator="xml" />
+                            <arg expression="get-property('type')" evaluator="xml" />
+                            <arg expression="get-property('exception')" evaluator="xml" />
+                            <arg expression="get-property('Error Code')" evaluator="xml" />
+                            <arg expression="get-property('messageId')"/>
+                        </args>
+                    </payloadFactory>
+
+                    <call>
+                        <endpoint key="InsertLogs" />
+                    </call>
+                </then>
+                <else>
+                    <payloadFactory media-type="xml">
+                        <format>
+                            <logRequest>
+                                <integrationNo>$1</integrationNo>
+                                <payload>$2</payload>
+                                <type>$3</type>
+                                <error_details>$4</error_details>
+                                <errorcode>$5</errorcode>
+                                <messageid>$6</messageid>
+                            </logRequest>
+                        </format>
+                        <args>
+                            <arg expression="get-property('Integration ID')" evaluator="xml" />
+                            <arg expression="get-property('Body')" />
+                            <arg expression="get-property('Type')" evaluator="xml" />
+                            <arg expression="get-property('exception')" evaluator="xml" />
+                            <arg expression="get-property('Error Code')" evaluator="xml" />
+                            <arg expression="get-property('messageId')"/>
+                        </args>
+                    </payloadFactory>
+
+                    <call>
+                        <endpoint key="InsertLogs" />
+                    </call>
+                </else>
+            </filter>
+            <respond />
+        </inSequence>
+    </resource>
+    <resource methods="POST" uri-template="/logcallback">
+        <inSequence>
+            <enrich>
+                <source type="body" />
+                <target type="property" property="fullPayload" />
+            </enrich>
+
+            <property name="messageId" expression="json-eval($.results[0].messageId)"
+                scope="default" type="STRING" />
+            <property name="type" type="STRING" value="Callback Payload" />
+            <property name="integrationNo" type="STRING" value="I1125" />
+
+            <payloadFactory media-type="xml">
+                <format>
+                    <logRequest>
+                        <integrationNo>$1</integrationNo>
+                        <payload>$2</payload>
+                        <type>$3</type>
+                        <messageid>$4</messageid>
+                    </logRequest>
+                </format>
+                <args>
+                    <arg expression="get-property('integrationNo')" />
+                    <arg expression="get-property('fullPayload')" />
+                    <arg expression="get-property('type')" />
+                    <arg expression="get-property('messageId')"  />
+                </args>
+            </payloadFactory>
+            <call>
+                <endpoint key="InsertCallbackLogs" />
+            </call>
+            <respond />
+        </inSequence>
+        <faultSequence>
+        </faultSequence>
+    </resource>
+</api>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence name="onErrorSeq" trace="disable" xmlns="http://ws.apache.org/ns/synapse">
+    <log description="Log failure details" level="custom">
+        <property name="message" value="Processing failed"/>
+        <property name="error_message" expression="$ctx:ERROR_MESSAGE"/>
+        <property name="erCode------" expression="get-property('axis2', 'HTTP_SC')"/>
+    </log>
+    <property name="errCode" expression="get-property('axis2', 'HTTP_SC')"/>
+    <property name="errorMsgId" scope="transport" expression="get-property('messageId')"/>
+    <property name="error" scope="transport" type="STRING" expression="get-property('ERROR_MESSAGE')" />
+    <property name="errorDetails" scope="transport" type="STRING" expression="get-property('ERROR_MESSAGE')" />
+    <property name="errorStatusCode" scope="transport" type="STRING" expression="get-property('errCode')" />
+    <property name="integrationNo" scope="transport" type="STRING" value="I1125" />
+    <call>
+        <endpoint key="LogAPI" />
+    </call>
+    <property name="SC_ACCEPTED" value="false" scope="axis2"/>
+    <property description="Set HTTP status to 500" name="HTTP_SC" scope="axis2" type="STRING" expression="get-property('errCode')" />
+    <payloadFactory description="Create error response payload" media-type="json">
+        <format>
+            {
+                "Error": {
+                    "message": "Processing failed.",
+                    "reason": "$1"
+                }
+            }
+        </format>
+        <args>
+            <arg expression="$ctx:ERROR_MESSAGE"/>
+        </args>
+    </payloadFactory>
+    <respond description="Send error response"/>
+</sequence>

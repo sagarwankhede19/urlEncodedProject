@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence name="processSeq" trace="disable" onError="onErrorSeq" xmlns="http://ws.apache.org/ns/synapse">
+
+    <!-- <script language="js"><![CDATA[throw new Error("This is the reason why the processing has failed.");]]></script> -->
+    <!-- <sequence key="getInfobipConfigsss" /> -->
+    <log level="full">
+        <property name="proc" value="-------------------------------" />
+    </log>
+    <sequence key="getInfobipConfigsDB" />
+
+    <switch source="get-property('templateName')">
+        <case regex="draft_psa_1a">
+            <log level="full">
+                <property name="templateDraftPSA_1a" value="---------inside----------------------" />
+            </log>
+            <sequence key="templateDraftPSA_1a" />
+        </case>
+        <case regex="psa_1">
+            <sequence key="templatePSA_1" />
+        </case>
+        <case regex="psa_7">
+            <sequence key="templatePSA_7" />
+        </case>
+        <case regex="psa_7_1">
+            <sequence key="templatePSA_7_1" />
+        </case>
+        <case regex="psa_7_2">
+            <sequence key="templatePSA_7_2" />
+        </case>
+        <case regex="psa_7b">
+            <sequence key="templatePSA_7b" />
+        </case>
+        <default>
+            <log level="full">
+                <property name="defaultSeq" value="---------inside----------------------" />
+            </log>
+            <sequence key="defaultSeq" />
+        </default>
+    </switch>
+    <header name="Authorization" action="set" scope="transport" expression="get-property('apiKey')" />
+    <!-- <header name="Authorization" action="set" scope="transport" value="SADASD" /> -->
+    <log level="full">
+        <property name="INFO" value="Checking for Client Errors (4xx)" />
+        <property name="HTTP Status Code" expression="get-property('axis2', 'HTTP_SC')" />
+    </log>
+    <call>
+        <endpoint key="infobipEP" />
+    </call>
+    <property name="statusCode" expression="get-property('axis2', 'HTTP_SC')"/>
+    <log level="full">
+        <property name="HTTP Status Code." expression="get-property('statusCode')"/>
+    </log>
+    
+    <property name="infobipResponse"  expression="json-eval($.)" />
+    <property name="integrationNo" scope="transport" type="STRING" value="I1125" />
+    <property name="type" scope="transport" type="STRING" value="Response Body" />
+
+    <switch source="get-property('statusCode')">
+        <case regex="200">
+            <payloadFactory description="Create response payload" media-type="json">
+                <format> { "to": "$1", "messageCount": $2, "messageId": "$3", "status": "$4", "description": "$5" } </format>
+                    <args>
+                        <arg evaluator="xml" expression="get-property('to')" />
+                        <arg evaluator="json" expression="json-eval($.messages[0].messageCount)" />
+                        <arg evaluator="json" expression="json-eval($.messages[0].messageId)" />
+                        <arg evaluator="json" expression="json-eval($.messages[0].status.groupName)" />
+                        <arg evaluator="json" expression="json-eval($.messages[0].status.description)" />
+                </args>
+            </payloadFactory>
+            <property name="tmResponse" expression="json-eval($)" ></property>
+            <log level="full">
+                <property name="tmResponse-- 200" expression="get-property('tmResponse')"/>
+                <property name="statusCode--in  200" expression="get-property('statusCode')"/>
+
+            </log>
+        </case>
+        <case regex="400">
+            <log level="full">
+                <property name="4000 response" value="--------------"/>
+                <property name="-- validationErrors" expression="json-eval($.requestError.serviceException.validationErrors)"/>
+            </log>
+            <payloadFactory description="Create response payload" media-type="json">
+                <format>{ "to": "$1", "messageCount": 1, "messageId": "$2", "status": "FAILED", "description": $3 } </format>
+                    <args>
+                        <arg evaluator="xml" expression="get-property('to')" />
+                        <arg evaluator="xml" expression="get-property('messageId')"/>
+                        <arg evaluator="json"  expression="json-eval($.requestError.serviceException.validationErrors)"/>
+                </args>
+            </payloadFactory>
+            <property name="tmResponse" expression="json-eval($)" ></property>
+            <log level="full">
+                <property name="tmResponse-- 200" expression="get-property('tmResponse')"/>
+                <property name="statusCode--in  200" expression="get-property('statusCode')"/>
+
+            </log>
+        </case>
+        <default>
+            <log level="custom">
+                <property name="default" value="inside-------default"/>
+            </log>
+            <sequence key="errorSeq" />
+            <log level="full">
+                <property name="default tmResponse-- 200" expression="get-property('tmResponse')"/>
+            </log>
+        </default>
+    </switch>
+
+    <log level="full">
+        <property name="endpoint" value="before endpoint-------"/>
+    </log>
+    <call>
+        <endpoint key="LogAPI" />
+    </call>
+
+    <log level="full">
+        <property name="afendpoint" value="aftere endpoint-------"/>
+        <property name="SC_ACCEPTED (Before Setting)" expression="get-property('axis2', 'SC_ACCEPTED')"/>
+    </log>
+    <property name="SC_ACCEPTED" value="false" scope="axis2"/>
+    <property name="HTTP_SC" expression="get-property('statusCode')" scope="axis2"/>
+    <payloadFactory media-type="json">
+        <format>
+            $1</format>
+        <args>
+            <arg expression="get-property('tmResponse')"></arg>
+        </args>
+    </payloadFactory>
+    <respond />
+
+</sequence>

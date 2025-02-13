@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence name="processCallbackSeq" trace="disable" xmlns="http://ws.apache.org/ns/synapse">
+    <property name="to" expression="json-eval($.results[0].to)" scope="default" type="STRING" />
+    <property name="messageId" expression="json-eval($.results[0].messageId)" scope="default" type="STRING" />
+    <property name="doneAt" expression="json-eval($.results[0].doneAt)" scope="default" type="STRING" />
+    <property name="sentAt" expression="json-eval($.results[0].sentAt)" scope="default" type="STRING" />
+    <property name="seenAt" expression="json-eval($.results[0].seenAt)" scope="default" type="STRING" />
+    <property name="status" expression="json-eval($.results[0].status.groupName)" scope="default" type="STRING" />
+    <property name="statusDescription" expression="json-eval($.results[0].status.description)" scope="default" type="STRING" />
+    <property name="errorDescription" expression="json-eval($.results[0].error.description)" scope="default" type="STRING" />
+    <log level="full">
+        <property name="Info" value="Received callback data from Infobip processCallback------------------" />
+        <property name="to" expression="json-eval($.results[0].to)" scope="default" type="STRING" />
+        <property name="messageId" expression="json-eval($.results[0].messageId)" scope="default" type="STRING" />
+        <property name="doneAt" expression="json-eval($.results[0].doneAt)" scope="default" type="STRING" />
+        <property name="sentAt" expression="json-eval($.results[0].sentAt)" scope="default" type="STRING" />
+        <property name="status" expression="json-eval($.results[0].status.groupName)" scope="default" type="STRING" />
+        <property name="statusDescription" expression="json-eval($.results[0].status.description)" scope="default" type="STRING" />
+        <property name="errorDescription" expression="json-eval($.results[0].error.description)" scope="default" type="STRING" />
+        <property name="description" expression="fn:concat(get-property('statusDescription'), ' - ', get-property('errorDescription'))" scope="default" type="STRING" />
+        <property name="Condition Result" expression="not(get-property('doneAt'))" />
+        <property name="Condition Resulsst" expression="get-property('doneAt')" />
+    </log>
+    <call>
+        <endpoint key="logCallbackAPI" />
+    </call>
+    <filter xpath="get-property('doneAt')">
+        <then>
+            <log level="full">
+                <property name="Info" value="Inside then------------------" />
+            </log>
+            <payloadFactory media-type="json">
+                <format> 
+                    {
+                        "to": "$1",
+                        "messageId": "$2",
+                        "doneAt": "$3",
+                        "sentAt": "$4",
+                        "status": "$5",
+                        "description": "$6"
+                        "callbackData": "Callback data"
+                    }
+                </format>
+                <args>
+                    <arg expression="get-property('to')"></arg>
+                    <arg expression="get-property('messageId')"></arg>
+                    <arg expression="get-property('doneAt')"></arg>
+                    <arg expression="get-property('sentAt')"></arg>
+                    <arg expression="get-property('status')"></arg>
+                    <arg expression="fn:concat(get-property('statusDescription'), ' - ', get-property('errorDescription'))"></arg>
+                </args>
+            </payloadFactory>
+        </then>
+        <else>
+            <log level="full">
+                <property name="Info" value="Inside else------------------" />
+            </log>
+            <payloadFactory media-type="json">
+                <format>
+                    {
+                        "to": "$1",
+                        "messageId": "$2",
+                        "sentAt": "$3",
+                        "seenAt": "$4",
+                        "status": "SEEN",
+                        "description": "Message has been seen by the recipient."
+                        "callbackData": "Callback data"
+                    }
+                </format>
+                <args>
+                    <arg expression="get-property('to')"></arg>
+                    <arg expression="get-property('messageId')"></arg>
+                    <arg expression="get-property('sentAt')"></arg>
+                    <arg expression="get-property('seenAt')"></arg>
+                </args>
+            </payloadFactory>
+        </else>
+    </filter>
+    <log level="full">
+        <property name="Info" value="PayloadFactory done------------------" />
+    </log>
+    <!-- Calling TM URL -->
+    <call>
+        <endpoint>
+            <address uri="http://localhost:8290/tm-url" />
+        </endpoint>
+    </call>
+    <log level="full">
+        <property name="Info" value="after tm-url------------------" />
+    </log>
+    <respond />
+
+</sequence>

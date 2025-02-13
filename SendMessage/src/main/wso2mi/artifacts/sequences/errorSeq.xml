@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence name="errorSeq" trace="disable" xmlns="http://ws.apache.org/ns/synapse">
+    <property name="errorStatus" expression="json-eval($.requestError.serviceException.messageId)"/>
+    <property name="error" scope="transport" expression="json-eval($.requestError.serviceException.messageId)"/>
+    <property name="description" expression="json-eval($.requestError.serviceException.text)"/>
+    <property name="errorMsgId" scope="transport" expression="get-property('messageId')"/>
+    <property name="errorDetails" scope="transport" expression="fn:concat(get-property('errorStatus'), ' - ', get-property('description'))"/>
+    <property name="errorStatusCode" scope="transport" expression="get-property('statusCode')"/>
+    <log description="Log failure details" level="custom">
+        <property name="message" value="Processing failed"/>
+        <property name="error_message" expression="$ctx:ERROR_MESSAGE"/>
+        <property name="errorStatus" expression="json-eval($.requestError.serviceException.messageId)"/>
+        <property name="description" expression="json-eval($.requestError.serviceException.text)"/>
+        <property name="cat--" expression="get-property('cat')"/>
+        <property name="messageIds--" expression="get-property('messageId')"/>
+    </log>
+    <payloadFactory description="Create error response payload" media-type="json">
+        <format>
+            {
+                "to": "$1",
+                "messageCount": 1,
+                "messageId": "$2",
+                "status": "FAILED",
+                "description": "$3 - $4"
+            }
+        </format>
+            <args>
+                <arg evaluator="xml" expression="get-property('to')" />
+                <arg evaluator="xml" expression="get-property('messageId')" />
+                <arg evaluator="xml" expression="get-property('errorStatus')" />
+                <arg evaluator="xml" expression="get-property('description')" />
+            </args>
+    </payloadFactory>
+    <property name="tmResponse" expression="json-eval($)"></property>
+    <log description="Log failure details" level="full">
+        <property name="tmResponse-errrr-" expression="get-property('tmResponse')"/>
+    </log>
+</sequence> 

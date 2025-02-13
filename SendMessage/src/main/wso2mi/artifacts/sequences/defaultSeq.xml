@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence name="defaultSeq" trace="disable" xmlns="http://ws.apache.org/ns/synapse">
+    <payloadFactory media-type="json" template-type="default">
+        <format>
+            {
+                "to": "$1",
+                "messageId": "$2",
+                "status": "FAILED",
+                "description":"The requested template : $3 not found."
+            }
+        </format>
+        <args>
+            <arg expression="get-property('to')" />
+            <arg expression="get-property('messageId')" />
+            <arg expression="get-property('templateName')" />
+        </args>
+    </payloadFactory>
+    
+    <property name="tmPayload" expression="json-eval($)" />
+    <property name="integrationNo" scope="transport" type="STRING" value="I1125" />
+    <property name="error" scope="transport" value="template not found"/>
+    <property name="errorMsgId" scope="transport" expression="get-property('messageId')"/>
+    <property name="errorDetails" scope="transport" expression="fn:concat('The requested template', ' : ', get-property('templateName'), ' not found')"/>
+    <property name="errorStatusCode" scope="transport" value="400"/>
+
+    <call>
+        <endpoint key="LogAPI" />
+    </call>
+
+    <log level="full">
+        <property name="errorDetails---" expression="get-property('errorDetails')"/>
+    </log>
+    <property name="SC_ACCEPTED" value="false" scope="axis2"/>
+    <property name="HTTP_SC" value="400" scope="axis2"/>
+    <payloadFactory media-type="json" template-type="default">
+        <format>$1</format>
+        <args>
+            <arg expression="get-property('tmPayload')" />
+        </args>
+    </payloadFactory>
+    <respond />
+    
+</sequence>

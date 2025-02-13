@@ -1,0 +1,17 @@
+<sequence name="getInfobipConfigsDB" trace="disable" xmlns="http://ws.apache.org/ns/synapse">
+    <call>
+        <endpoint key="getConfigEP" />
+    </call>
+    <property name="jsonPayload" expression="//*[local-name()='value']/text()" scope="default" type="STRING" />
+    
+    <payloadFactory media-type="json">
+        <format>{ "jsonPayload": $1 }</format>
+        <args>
+            <arg evaluator="xml" expression="get-property('jsonPayload')" />
+        </args>
+    </payloadFactory>
+    
+    <property name="apiKey" expression="json-eval($.jsonPayload.apiKey)" scope="default" />
+    <property name="infobipUrl" expression="json-eval($.jsonPayload.infobipUrl)" scope="default" />
+
+</sequence>
