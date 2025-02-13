@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sequence name="defaultSeq" trace="disable" xmlns="http://ws.apache.org/ns/synapse">
+    <log level="full">
+        <property name="in the ---defaultSeq" value="------"/>
+    </log>
     <payloadFactory media-type="json" template-type="default">
         <format>
             {
@@ -23,6 +26,9 @@
     <property name="errorDetails" scope="transport" expression="fn:concat('The requested template', ' : ', get-property('templateName'), ' not found')"/>
     <property name="errorStatusCode" scope="transport" value="400"/>
 
+    <log level="full">
+        <property name="before logs---" expression="get-property('errorDetails')"/>
+    </log>
     <call>
         <endpoint key="LogAPI" />
     </call>
