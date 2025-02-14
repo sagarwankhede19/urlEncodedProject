@@ -10,8 +10,12 @@
             <arg evaluator="xml" expression="get-property('jsonPayload')" />
         </args>
     </payloadFactory>
+    <log level="full">
+        <property name="jsonPayload-----6" expression="get-property('jsonPayload')" />
+    </log>
     
     <property name="apiKey" expression="json-eval($.jsonPayload.apiKey)" scope="default" />
     <property name="infobipUrl" expression="json-eval($.jsonPayload.infobipUrl)" scope="default" />
+    <property name="from" expression="json-eval($.jsonPayload.from)" scope="default" />
 
 </sequence>

@@ -3,7 +3,7 @@
     <description />
     <config id="log">
         <property name="driverClassName">com.mysql.cj.jdbc.Driver</property>
-        <property name="url">jdbc:mysql://20.2.32.171:3306/vkraftwso2</property>
+        <property name="url">jdbc:mysql://devwso2.kraftsoftwaresolutions.com/vkraftwso2</property>
         <property name="username">wso2</property>
         <property name="password">wso2@2024</property>
     </config>
